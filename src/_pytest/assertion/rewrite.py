@@ -653,8 +653,8 @@ class AssertionRewriter(ast.NodeVisitor):
             # Nothing to do.
             return
 
-        # Insert some special imports at the top of the module but after any
-        # docstrings and __future__ imports.
+        # We'll insert some special imports at the top of the module, but after any
+        # docstrings and __future__ imports, so first figure out where that is.
         doc = getattr(mod, "docstring", None)
         expect_docstring = doc is None
         if doc is not None and self.is_rewrite_disabled(doc):
@@ -681,6 +681,7 @@ class AssertionRewriter(ast.NodeVisitor):
             pos += 1
         else:
             lineno = item.lineno
+        # Now actually insert the special imports.
         if sys.version_info >= (3, 10):
             aliases = [
                 ast.alias("builtins", "@py_builtins", lineno=lineno, col_offset=0),
@@ -698,6 +699,7 @@ class AssertionRewriter(ast.NodeVisitor):
             ast.Import([alias], lineno=lineno, col_offset=0) for alias in aliases
         ]
         mod.body[pos:pos] = imports
+
         # Collect asserts.
         nodes = [mod]
         while nodes:
